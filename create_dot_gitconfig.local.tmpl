@@ -1,0 +1,21 @@
+{{- /*
+  Per-machine git identity, created once and never overwritten by chezmoi afterwards.
+  If git already knows your name/email when this file is first created (for example Omarchy keeps them
+  in ~/.config/git/config), they are copied here so the placeholders can never override a real identity
+  (this file is read after the XDG config). Anything still unknown keeps a placeholder, and
+  run_after_gitconfig-local-reminder.sh nags until the placeholders are replaced.
+  Asked from / (not a repo) so the dotfiles repo's own config is never picked up. Not `--global`:
+  that reads only ONE file (~/.gitconfig if it exists, otherwise the XDG one), so an identity kept in
+  the XDG config would be missed whenever any ~/.gitconfig exists.
+*/ -}}
+{{- $name := output "sh" "-c" "git -C / config --get user.name || true" | trim -}}
+{{- $email := output "sh" "-c" "git -C / config --get user.email || true" | trim -}}
+# Per-machine git identity (never overwritten by chezmoi once it exists).
+{{ if and $name $email -}}
+# Prefilled from the git identity that already existed when this file was created; edit freely.
+{{ else -}}
+# Replace the placeholder values below: this is the only setup step left to do by hand.
+{{ end -}}
+[user]
+	name = {{ if $name }}{{ $name | quote }}{{ else }}FILL ME IN{{ end }}
+	email = {{ if $email }}{{ $email | quote }}{{ else }}fill-me-in@example.invalid{{ end }}

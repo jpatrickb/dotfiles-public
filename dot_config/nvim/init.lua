@@ -1,0 +1,14 @@
+-- Bootstrap lazy.nvim, LazyVim and the plugins in lua/plugins/.
+--
+-- Layout (LazyVim, as shipped by Omarchy, plus personal layers):
+--   lua/config/lazy.lua       lazy.nvim bootstrap; imports LazyVim and lua/plugins/
+--   lua/config/options.lua    options (loaded before lazy.nvim starts)
+--   lua/config/keymaps.lua    keymaps (loaded on VeryLazy)
+--   lua/config/autocmds.lua   autocmds and user commands (loaded on VeryLazy)
+--   lua/plugins/*.lua         one file per concern; each returns lazy.nvim specs
+--   lazyvim.json              which LazyVim extras are enabled (:LazyExtras edits it)
+--   lazy-lock.json            plugin versions, shared by every machine (see docs/neovim.md)
+--
+-- lua/plugins/theme.lua is the colour scheme. On Omarchy it is Omarchy's own symlink (it changes with the Omarchy
+-- theme); on every other machine it is a copy that the dotfiles repo keeps in sync with Omarchy.
+require 'config.lazy'

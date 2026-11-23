@@ -1,0 +1,41 @@
+{{- if (get . "awsCli") -}}
+#!/bin/bash
+# [custom] Optional: the AWS CLI. Only installed when you answered yes to
+# "Install the AWS CLI" at `chezmoi init` (this file renders empty, and so does
+# nothing, otherwise). To enable later: `chezmoi init --prompt`, answer yes, then
+# `chezmoi apply`.
+set -euo pipefail
+
+command -v apt-get >/dev/null 2>&1 || command -v pacman >/dev/null 2>&1 || exit 0
+export PATH="$HOME/.local/bin:$PATH"
+
+# AWS CLI v2. Arch packages it; elsewhere use the official installer into
+# ~/.local (no sudo), since apt has no usable package on older Ubuntu.
+if ! command -v aws >/dev/null 2>&1; then
+  if command -v pacman >/dev/null 2>&1; then
+    echo "==> Installing AWS CLI (pacman)..."
+    sudo pacman -S --noconfirm --needed aws-cli-v2
+  else
+    case "$(uname -m)" in
+      x86_64)        AWS_ARCH=x86_64 ;;
+      aarch64|arm64) AWS_ARCH=aarch64 ;;
+      *) AWS_ARCH="" ;;
+    esac
+    if [ -n "$AWS_ARCH" ]; then
+      echo "==> Installing AWS CLI v2..."
+      mkdir -p "$HOME/.local/bin"
+      tmp="$(mktemp -d)"; trap 'rm -rf "$tmp"' EXIT
+      # Download and test the zip (a truncated or corrupt one has happened); retry a few times, then fail clearly.
+      ok=""
+      for attempt in 1 2 3; do
+        if curl -fsSL --retry 3 -o "$tmp/awscliv2.zip" "https://awscli.amazonaws.com/awscli-exe-linux-${AWS_ARCH}.zip" \
+           && unzip -tq "$tmp/awscliv2.zip" >/dev/null 2>&1; then ok=1; break; fi
+        echo "  AWS CLI download failed or is corrupt (attempt $attempt/3)" >&2; sleep $((attempt * 5))
+      done
+      [ -n "$ok" ] || { echo "AWS CLI: no good download after 3 tries; rerun \`chezmoi apply\` later (nothing was installed)." >&2; exit 1; }
+      unzip -q "$tmp/awscliv2.zip" -d "$tmp"
+      "$tmp/aws/install" -i "$HOME/.local/aws-cli" -b "$HOME/.local/bin" --update
+    fi
+  fi
+fi
+{{- end }}

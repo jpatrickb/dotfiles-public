@@ -1,0 +1,2 @@
+# Optional: AWS CLI. brew bundle --file="$(chezmoi source-path)/Brewfile.aws"
+brew "awscli"

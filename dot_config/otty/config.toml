@@ -1,0 +1,64 @@
+# Otty config (Mac only), tracked by chezmoi. Otty rewrites this file when you change settings in its window, so after
+# changing something there run `chezmoi re-add ~/.config/otty/config.toml` to keep the repo copy current.
+
+foreground = "#24292e"
+background = "#ffffff"
+palette-0 = "#24292e"
+palette-1 = "#d73a49"
+palette-2 = "#28a745"
+palette-3 = "#dbab09"
+palette-4 = "#0366d6"
+palette-5 = "#5a32a3"
+palette-6 = "#0598bc"
+palette-7 = "#45494e"
+palette-8 = "#959da5"
+palette-9 = "#cb2431"
+palette-10 = "#22863a"
+palette-11 = "#b08800"
+palette-12 = "#005cc5"
+palette-13 = "#5a32a3"
+palette-14 = "#3192aa"
+palette-15 = "#191c20"
+open-with-app = "VS Code|com.microsoft.VSCode"
+open-with-app = "Cursor|com.todesktop.230313mzl4w4u92"
+open-with-app = "Xcode|com.apple.dt.Xcode"
+
+# window-layout = "tabs-top" (reset to default)
+
+global-hotkey-open-window = "cmd+opt+o"
+
+keybind = "cmd+r=rename_tab"
+
+# unfocused-split-opacity = 0.55 (reset to default)
+
+window-opacity = 0.8
+
+sidebar-width = 373
+
+on-launch = "new_window"
+
+autocomplete-skip-secrets = true
+
+theme = "Floating Card"
+
+# selection-foreground = "#fafaff" (reset to default)
+# cursor-text = "#565656" (reset to default)
+
+theme-dark = "Rosé Pine"
+
+font-size = 15
+
+agent-profile = "claude|claude-personal|~/.claude-personal"
+selection-background = "#e4e4e7"
+cursor-color = "#18181b"
+
+# Added from the old shared dotfiles.toml (comments must be on their own line in Otty).
+# Nerd Font: the prompt, eza and fastfetch icons need it.
+font-family = "JetBrainsMono Nerd Font"
+# Select-to-copy.
+copy-on-select = true
+# Left Option acts as Alt, so tmux and herdr Alt shortcuts work; the right Option still types accents.
+macos-option-as-alt = left
+# Shift+Enter and Alt+Shift+Enter as CSI-u sequences, so Claude Code and Neovim can tell Shift+Enter from Enter.
+keybind = shift+enter=csi:13;2u
+keybind = alt+shift+enter=csi:13;4u

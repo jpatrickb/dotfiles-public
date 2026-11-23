@@ -1,0 +1,23 @@
+# Bash extras for every Arch machine (Omarchy, plain Arch, Arch on WSL). Sourced by the managed block in
+# ~/.bashrc after common.sh and functions.sh. These are the things zsh gets from plugins or its own init.
+# Everything is guarded, so a machine without atuin / direnv / ble.sh simply skips that line.
+# Interactive shells only.
+
+case $- in *i*) ;; *) return 0 2>/dev/null || exit 0 ;; esac
+
+# atuin: full-text shell history search (Ctrl-R). It needs a preexec hook: ble.sh provides one when loaded;
+# otherwise use bash-preexec. Runs after fzf's key bindings so atuin's Ctrl-R wins, as in the zsh setup.
+if command -v atuin >/dev/null 2>&1; then
+  if [[ -z ${BLE_VERSION-} ]]; then
+    for _bp in /usr/share/bash-preexec/bash-preexec.sh "$HOME/.bash-preexec.sh"; do
+      [[ -r $_bp ]] && { source "$_bp"; break; }
+    done
+    unset _bp
+  fi
+  eval "$(atuin init bash)"
+fi
+
+# direnv: per-directory environments (.envrc).
+if command -v direnv >/dev/null 2>&1; then
+  eval "$(direnv hook bash)"
+fi

@@ -1,0 +1,15 @@
+# Fresh Arch Linux (official image is x86_64 only -- run with PLATFORM=linux/amd64
+# on Apple Silicon). Mirrors Dockerfile: a sudo-capable non-root user, curl, git.
+FROM archlinux:latest
+# Emulated x86_64 on ARM can't run pacman's download sandbox, and slow mirrors trip its
+# download timeout (test-only workarounds).
+RUN sed -i -e 's/^#DisableSandboxSyscalls/DisableSandboxSyscalls/' /etc/pacman.conf \
+ && sed -i '/^\[options\]/a DisableDownloadTimeout' /etc/pacman.conf
+RUN pacman -Syu --noconfirm --needed sudo curl ca-certificates git \
+ && sed -i 's/^#en_US.UTF-8/en_US.UTF-8/' /etc/locale.gen && locale-gen
+RUN useradd -m -s /bin/bash -G wheel tester \
+ && echo 'tester ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/tester
+USER tester
+ENV HOME=/home/tester LANG=en_US.UTF-8
+WORKDIR /home/tester
+RUN sh -c "$(curl -fsLS get.chezmoi.io)" -- -b /home/tester/.local/bin

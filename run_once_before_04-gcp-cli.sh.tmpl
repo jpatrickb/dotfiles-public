@@ -1,0 +1,28 @@
+{{- if (get . "gcpCli") -}}
+#!/bin/bash
+# [custom] Optional: the Google Cloud CLI. Only installed when you answered yes to
+# "Install the GCP CLI" at `chezmoi init` (this file renders empty, and so does
+# nothing, otherwise). To enable later: `chezmoi init --prompt`, answer yes, then
+# `chezmoi apply`.
+set -euo pipefail
+
+command -v apt-get >/dev/null 2>&1 || command -v pacman >/dev/null 2>&1 || exit 0
+export PATH="$HOME/.local/bin:$PATH"
+
+# Google Cloud CLI: not in Ubuntu's or Arch's official repos. Official tarball
+# into ~/google-cloud-sdk; .zshrc puts it on PATH when that directory exists.
+if ! command -v gcloud >/dev/null 2>&1 && [ ! -d "$HOME/google-cloud-sdk" ]; then
+  case "$(uname -m)" in
+    x86_64)        GC_ARCH=x86_64 ;;
+    aarch64|arm64) GC_ARCH=arm ;;
+    *) GC_ARCH="" ;;
+  esac
+  if [ -n "$GC_ARCH" ]; then
+    echo "==> Installing Google Cloud CLI..."
+    curl -fLo /tmp/gcloud.tar.gz "https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-cli-linux-${GC_ARCH}.tar.gz"
+    tar -C "$HOME" -xzf /tmp/gcloud.tar.gz
+    "$HOME/google-cloud-sdk/install.sh" --quiet --path-update=false --command-completion=false --usage-reporting=false
+    rm -f /tmp/gcloud.tar.gz
+  fi
+fi
+{{- end }}

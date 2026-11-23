@@ -1,0 +1,26 @@
+{{- /*
+  Machine classification: pure function of its inputs, so .test/detect.sh can check it with fake data.
+  Inputs (a dict): os, id, idLike (from /etc/os-release), kernel (uname -r), omarchy (bool: /usr/share/omarchy exists)
+  Output: "<family> <env>" on one line.
+    family: mac | arch | debian | other
+      arch   = Arch, Arch WSL, Omarchy and other Arch derivatives (ID=arch, or ID_LIKE contains arch)
+      debian = Debian, Ubuntu and derivatives (ID debian/ubuntu, or ID_LIKE contains debian/ubuntu)
+    env: omarchy | wsl | native
+*/ -}}
+{{- $family := "other" -}}
+{{- if eq .os "darwin" -}}
+{{-   $family = "mac" -}}
+{{- else if eq .os "linux" -}}
+{{-   if or (eq .id "arch") (contains "arch" .idLike) -}}
+{{-     $family = "arch" -}}
+{{-   else if or (eq .id "debian") (eq .id "ubuntu") (contains "debian" .idLike) (contains "ubuntu" .idLike) -}}
+{{-     $family = "debian" -}}
+{{-   end -}}
+{{- end -}}
+{{- $env := "native" -}}
+{{- if and (eq .os "linux") .omarchy -}}
+{{-   $env = "omarchy" -}}
+{{- else if and (eq .os "linux") (contains "microsoft" (lower .kernel)) -}}
+{{-   $env = "wsl" -}}
+{{- end -}}
+{{ $family }} {{ $env }}

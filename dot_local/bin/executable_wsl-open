@@ -1,0 +1,19 @@
+#!/bin/sh
+# [custom] Open a URL or file with the Windows default handler, from inside WSL.
+# Stand-in for xdg-open/wslview (wslu isn't packaged on every distro). Used via
+# $BROWSER (see .zshrc), so tools like `gh auth login` can open the browser.
+#
+# The target is passed to PowerShell as DATA (an environment variable shared
+# through WSLENV), never spliced into PowerShell source, so a crafted URL cannot
+# inject commands (PowerShell treats several Unicode quote characters as quotes).
+[ $# -ge 1 ] || { echo "usage: wsl-open <url-or-file>" >&2; exit 2; }
+target="$1"
+case "$target" in
+  http://*|https://*|mailto:*) ;;
+  *)
+    [ -e "$target" ] || { echo "wsl-open: not a web/mail URL or existing file: $target" >&2; exit 2; }
+    target="$(wslpath -w "$target")"
+    ;;
+esac
+WSL_OPEN_TARGET="$target" WSLENV="WSL_OPEN_TARGET${WSLENV:+:$WSLENV}" \
+  exec powershell.exe -NoProfile -NonInteractive -Command 'Start-Process -FilePath $env:WSL_OPEN_TARGET'

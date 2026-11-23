@@ -1,0 +1,48 @@
+scripts
+Brewfile
+Brewfile.aws
+Brewfile.gcp
+README.md
+docs
+.config/nvim/lua/obsidian_workspaces_local.lua
+{{ if ne .chezmoi.os "darwin" }}.zprofile{{ end }}
+{{ if ne .chezmoi.os "darwin" }}Library{{ end }}
+{{- /* Noctty (Windows terminal) config only matters inside WSL; see run_copy-noctty-to-windows.sh */ -}}
+{{ $wsl := false }}{{ if eq .chezmoi.os "linux" }}{{ if contains "microsoft" (lower .chezmoi.kernel.osrelease) }}{{ $wsl = true }}{{ end }}{{ end }}{{ if eq (get . "env" | default "") "wsl" }}{{ $wsl = true }}{{ end }}
+{{ if not $wsl }}.config/noctty{{ end }}
+{{ if not $wsl }}.local/bin/wsl-open{{ end }}
+{{- /* Omarchy owns its own btop config (its theme engine links color_theme "current"); the repo's
+       seed in dot_config/btop/create_btop.conf is for the other machines. `get` so a machine that has
+       not re-run `chezmoi init` yet (no .env data) still renders. */}}
+{{ if eq (get . "env" | default "") "omarchy" }}.config/btop{{ end }}
+{{- /* Shell: bash on the Arch family (Omarchy, plain Arch, Arch WSL), zsh on Ubuntu and the Mac.
+       `get`: a machine that has not re-run `chezmoi init` yet has no .family, so it keeps today's behaviour
+       (zsh files deployed, bash left alone) until it does. */}}
+{{ $family := get . "family" | default "" }}
+{{ if ne $family "arch" }}.bashrc{{ end }}
+{{ if ne $family "arch" }}.config/shell/bash-defaults{{ end }}
+{{ if ne $family "arch" }}.config/shell/bash-extras{{ end }}
+{{ if ne $family "arch" }}.config/shell/inputrc{{ end }}
+{{ if eq $family "arch" }}.zshrc{{ end }}
+{{- /* Omarchy's About window runs ~/.config/fastfetch/config.jsonc "as it is" when one exists (it is searched before
+       /etc/fastfetch), which would replace Omarchy's own About layout with ours. So on Omarchy only banner.jsonc
+       is installed (used with -c by banner.sh); every other machine also gets the config.jsonc symlink. */}}
+{{ if eq (get . "env" | default "") "omarchy" }}.config/fastfetch/config.jsonc{{ end }}
+{{- /* Terminals. Otty is used on the Mac only. On Windows the terminal is Noctty (Otty lacked functionality there), so
+       WSL gets the Noctty files and run_copy-noctty-to-windows.sh, not Otty's. The Omarchy
+       theme-sync hook and the foot tweak only make sense on Omarchy. `get` keeps a machine that has not re-run `chezmoi init` yet
+       (no .env data) on the safe side: these Omarchy-only files are simply not installed until it has. */}}
+{{ if ne $family "mac" }}.config/otty{{ end }}
+{{ if ne $family "mac" }}.config/starship-dark.toml{{ end }}
+{{ if ne $family "mac" }}.config/starship-light.toml{{ end }}
+{{ if ne (get . "env" | default "") "omarchy" }}.config/omarchy{{ end }}
+{{ if ne (get . "env" | default "") "omarchy" }}.config/foot{{ end }}
+{{- /* Neovim (LazyVim). The colour scheme is lua/plugins/theme.lua. On Omarchy that path is Omarchy's OWN symlink to its
+       current theme, which chezmoi must never replace with a file; everywhere else it is the copy the theme-sync hook
+       keeps in this repo. This rule fails SAFE for the symlink: the file is only installed where `env` is explicitly
+       native or wsl, so a machine that has not re-run `chezmoi init` yet (no .env data) never gets it written over
+       Omarchy's link. The two Omarchy-only helpers (live theme reload; clipboard through tmux/ssh/herdr) are installed
+       on Omarchy only; options.lua copes with the clipboard module being absent. */}}
+{{ if not (or (eq (get . "env" | default "") "native") (eq (get . "env" | default "") "wsl")) }}.config/nvim/lua/plugins/theme.lua{{ end }}
+{{ if ne (get . "env" | default "") "omarchy" }}.config/nvim/lua/plugins/omarchy-theme-hotreload.lua{{ end }}
+{{ if ne (get . "env" | default "") "omarchy" }}.config/nvim/lua/config/remote_clipboard.lua{{ end }}

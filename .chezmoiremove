@@ -1,0 +1,29 @@
+# Targets chezmoi deletes on apply (paths relative to $HOME). Retired files that earlier versions of
+# this repo deployed; listed here so they disappear from machines that already have them.
+# bat now uses its built-in "ansi" theme (follows the terminal), so the hand-built Rose Pine themes go.
+.config/bat/themes/rose-pine.tmTheme
+.config/bat/themes/rose-pine-moon.tmTheme
+.config/bat/themes/rose-pine-dawn.tmTheme
+# tmux: the Rose Pine plugin, TPM, the light/dark theme files and the macOS appearance sync are retired (the status
+# bar now uses the terminal's ANSI colours; see dot_config/tmux/tmux.conf.tmpl). Only the two plugin folders that
+# THIS repo installed are listed, not the whole plugins/ directory, so a plugin you added yourself is left alone.
+.config/tmux/theme-dark.conf
+.config/tmux/theme-light.conf
+.config/tmux/theme-sync.sh
+.config/tmux/plugins/tpm
+.config/tmux/plugins/tmux
+# WezTerm is retired (Otty is the terminal on the Mac and Windows). Only the copy inside WSL is removed here: the
+# Windows-side C:\Users\<you>\.wezterm.lua that run_copy-wezterm-to-windows.sh used to write is outside WSL, so
+# delete that one by hand if you no longer want it.
+.config/wezterm/wezterm.lua
+# Neovim moved from a kickstart.nvim base to LazyVim (see dot_config/nvim/). These plugin files belonged to the old
+# config and would still be loaded (and fight LazyVim) on a machine that has them: their jobs are now done by LazyVim,
+# its extras, or lua/plugins/{languages,completion,editor,telescope}.lua. Deliberately NOT listed: lua/plugins/theme.lua
+# (on Omarchy that is Omarchy's own symlink) and lua/obsidian_workspaces_local.lua (yours, per machine).
+.config/nvim/lua/plugins/colorscheme.lua
+.config/nvim/lua/plugins/copilot.lua
+.config/nvim/lua/plugins/format.lua
+.config/nvim/lua/plugins/lint.lua
+.config/nvim/lua/plugins/lsp.lua
+.config/nvim/lua/plugins/mini.lua
+.config/nvim/lua/plugins/sql.lua

@@ -1,0 +1,108 @@
+chezmoi:modify-template
+{{- /*
+  ~/.bashrc on the Arch family (Omarchy, plain Arch, Arch on WSL; see .chezmoiignore for where it applies).
+
+  This is a chezmoi "modify" template: it receives the CURRENT ~/.bashrc as .chezmoi.stdin and prints the new
+  content. It never replaces the file. On Omarchy the current file is Omarchy's own (it sources
+  /usr/share/omarchy/default/bash/rc), and that stays untouched, so future Omarchy changes still apply.
+  chezmoi treats this file as a template (not a script) because of the marker on the FIRST line of the file;
+  chezmoi deletes every line containing that marker before rendering, so do not remove it and do not
+  repeat the marker text anywhere else. The file name must NOT end in .tmpl: chezmoi's docs say modify
+  templates must not have that extension (with it, .chezmoi.stdin does not exist).
+  We only maintain ONE clearly marked block, at the end, and leave everything else in the file alone. It loads
+  ble.sh (autosuggestions + syntax highlighting) AFTER Omarchy's rc / bash-defaults, then this repo's shell files,
+  then attaches ble.sh. Things about ble.sh that shaped this:
+    - Only ble.sh 0.4 or newer is used (the AUR `blesh-git`; Arch's `blesh` is 0.3.4). 0.3.x cannot draw 24-bit colours:
+      it takes the `38;2;r;g;b` of a hex colour apart and treats r, g and b as separate colour codes, so the starship
+      prompt (which uses the Omarchy theme's hex colours) comes out in the wrong colours. 0.3.x also runs only the first
+      element of PROMPT_COMMAND, and on foot it leaves xterm's modifyOtherKeys on while external programs run, so a
+      capital letter typed into sudo's password prompt arrives as an escape sequence. With 0.3.x installed, ble.sh is
+      simply not loaded (plain bash and starship, no suggestions).
+    - Loaded at the top, it intercepts the `bind` calls of fzf's key bindings and the inputrc and prints "unsupported
+      readline function" warnings on every shell start. Loaded after them, it stays quiet.
+  Older versions of this file also wrote a HEAD block at the top of ~/.bashrc; it is removed if present.
+  Re-applying replaces the block (never duplicates it); text you add outside it is preserved.
+  `get . "env"` so a machine that has not re-run `chezmoi init` yet still renders.
+*/ -}}
+{{- define "dotfiles-tail" -}}
+# >>> dotfiles (chezmoi) >>>
+# Managed by chezmoi (modify_dot_bashrc in the dotfiles repo): edit the source, not this block.
+case $- in *i*) ;; *) return 0 ;; esac
+{{ if eq .env "omarchy" -}}
+# Omarchy's defaults were sourced above; everything below overrides them (ls, cd, EDITOR, ...) and adds the
+# shared functions and bash extras.
+{{ else -}}
+# No Omarchy here: this repo's small bash-defaults stands in for Omarchy's rc (history, readline, tool init).
+[ -r "$HOME/.config/shell/bash-defaults" ] && . "$HOME/.config/shell/bash-defaults"
+{{ end -}}
+# ble.sh: loaded here, after the files above (see modify_dot_bashrc for why), attached at the very end. Only ble.sh 0.4 or
+# newer, and only with a terminal (ssh host cmd, an editor running `bash -ic`: ble.sh refuses to work there, with a warning).
+if [[ -t 0 && -t 1 ]]; then
+  for _ble in /usr/share/blesh/ble.sh "$HOME/.local/share/blesh/ble.sh"; do
+    [[ -r $_ble ]] || continue
+    _v=$(grep -m1 -E '^[[:space:]]*_ble_init_version=[0-9]' "$_ble" 2>/dev/null)
+    if [[ $_v =~ =([0-9]+)\.([0-9]+) ]] && (( BASH_REMATCH[1] > 0 || BASH_REMATCH[2] >= 4 )); then
+      source "$_ble" --noattach; break
+    fi
+  done
+  unset _ble _v
+fi
+for _f in common.sh functions.sh bash-extras banner.sh; do
+  [ -r "$HOME/.config/shell/$_f" ] && . "$HOME/.config/shell/$_f"
+done
+unset _f
+# Line editing: vi keys (Esc = normal mode). The current command line opens in $EDITOR (nvim) with Ctrl+G in either mode,
+# and with v in normal mode (Ctrl+X Ctrl+E in emacs style); saving and quitting runs it.
+set -o vi
+if [[ ${BLE_VERSION-} ]]; then
+  # ble.sh's autosuggestion is a grey background plus dark text, a whole block per cell; only the letters get a colour here.
+  ble-face auto_complete='fg=244'
+  ble-bind -m vi_imap -f C-g edit-and-execute-command
+  ble-bind -m vi_nmap -f C-g edit-and-execute-command
+  # The mode shows in the prompt character, as in the zsh setup: ❯ (insert) turns into ❮ in the vi-command colour in normal
+  # mode. ble.sh's own "-- INSERT --" line under the prompt is switched off. starship's bash integration cannot know the
+  # vi mode (only its zsh output has the vi-command character, which is why that one is asked for), so the last line of its prompt (the character) is handed to a ble.sh prompt sequence that asks ble.sh for the
+  # current keymap each time the prompt is drawn; ble.sh redraws the prompt whenever the mode changes.
+  # (set as variables: ble.sh declares these options only when its vi keymap loads, and keeps values that already exist)
+  bleopt_keymap_vi_mode_show= bleopt_keymap_vi_mode_update_prompt=1
+  ble/prompt/backslash:dotfiles-char() {
+    local keymap=emacs s=$_dotfiles_char_insert
+    ble/keymap:vi/script/get-vi-keymap
+    case $keymap in
+      vi_nmap|vi_omap|vi_xmap|vi_smap)
+        s=$(STARSHIP_SHELL=zsh starship prompt --keymap vicmd --status "${_dotfiles_char_status:-0}" --terminal-width "${COLUMNS:-80}" 2>/dev/null)
+        s=${s##*$'\n'} ;;
+    esac
+    s=${s//'\['/}; s=${s//'\]'/}; s=${s//'%{'/}; s=${s//'%}'/}   # ble.sh measures colours itself: no \[ \] (bash) or %{ %} (zsh) markers
+    ble/canvas/put.draw "$s"
+    return 0
+  }
+  if declare -F starship_precmd >/dev/null; then
+    eval "$(declare -f starship_precmd | sed '1s/^starship_precmd/_dotfiles_starship_precmd/')"
+    starship_precmd() {
+      _dotfiles_starship_precmd
+      local _st=$?
+      if [[ $PS1 == *$'\n'* ]]; then
+        _dotfiles_char_insert=${PS1##*$'\n'} _dotfiles_char_status=${STARSHIP_CMD_STATUS-0}
+        PS1=${PS1%$'\n'*}$'\n''\q{dotfiles-char}'
+      fi
+      return "$_st"
+    }
+  fi
+  ble-attach
+else
+  bind -m vi-insert '"\C-g": edit-and-execute-command'
+  bind -m vi-command '"\C-g": edit-and-execute-command'
+fi
+# <<< dotfiles (chezmoi) <<<
+{{- end -}}
+{{- $env := get . "env" | default "native" -}}
+{{- $cur := .chezmoi.stdin | default "" -}}
+{{- $cur = regexReplaceAll `(?s)# >>> dotfiles head \(chezmoi\) >>>.*?# <<< dotfiles head \(chezmoi\) <<<\n*` $cur "" -}}
+{{- /* Replace the tail block with ONE newline, not nothing: the regex also eats the newline that ended the line before it, and text the user put after the block would otherwise be glued onto that line. */ -}}
+{{- $cur = regexReplaceAll `(?s)\n*# >>> dotfiles \(chezmoi\) >>>.*?# <<< dotfiles \(chezmoi\) <<<\n*` $cur "\n" -}}
+{{- with ($cur | trim) -}}
+{{ . }}
+
+{{ end -}}
+{{ template "dotfiles-tail" (dict "env" $env) }}

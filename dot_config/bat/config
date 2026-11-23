@@ -1,0 +1,8 @@
+# bat configuration
+# bat's built-in "ansi" theme draws with the terminal's own 16 colors, so bat follows whatever theme
+# the terminal uses (Omarchy's theme engine, Otty, ...). Omarchy sets BAT_THEME=ansi the same way.
+# This replaces the hand-built Rose Pine themes, which needed `bat cache --build` on every machine.
+--theme="ansi"
+
+# Show non-printable characters can be noisy; keep default. Use a clean style.
+--style="numbers,changes,header"

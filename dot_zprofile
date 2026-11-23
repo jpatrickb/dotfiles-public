@@ -1,0 +1,10 @@
+
+eval "$(/opt/homebrew/bin/brew shellenv)"
+
+
+# Added by Toolbox App
+export PATH="$PATH:/Users/josephbeal/Library/Application Support/JetBrains/Toolbox/scripts"
+
+
+# Created by `pipx` on 2025-12-29 23:09:10
+export PATH="$PATH:/Users/josephbeal/Library/Python/3.10/bin"

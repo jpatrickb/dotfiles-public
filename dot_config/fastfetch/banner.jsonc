@@ -1,0 +1,175 @@
+// fastfetch banner: your framed layout with section branches, plus Nerd Font icons on every row and the
+// kernel / packages / terminal font / display / swap / wm rows taken from Omarchy's About layout.
+// Printed by ~/.config/shell/banner.sh on new interactive shells (full banner locally, one line over SSH,
+// nothing inside tmux or herdr panes). Installed as banner.jsonc on EVERY machine and used with `-c`.
+// Off Omarchy a config.jsonc symlink to this file also exists so plain `fastfetch` matches; on Omarchy there is
+// deliberately NO config.jsonc, because fastfetch would pick it up before /etc/fastfetch and Omarchy's About
+// window would then show this layout instead of its own.
+// Logo art is logo-keys.txt next to this file; $1-$4 pick the colors listed under "color". All colors are ANSI
+// numbers/names, so they follow the terminal's theme.
+// "command" rows print only where the command succeeds (wsl: inside WSL; omarchy / theme: on Omarchy), so the
+// row disappears everywhere else. Rows for hardware a machine does not have (display, battery) vanish too.
+{
+ "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+ "logo": {
+  "type": "file",
+  "source": "~/.config/fastfetch/logo-keys.txt",
+  "color": {
+   "1": "blue",
+   "2": "white",
+   "3": "magenta",
+   "4": "90"
+  },
+  "padding": {
+   "right": 3
+  }
+ },
+ "display": {
+  "separator": "  ",
+  "color": {
+   "keys": "blue",
+   "separator": "90"
+  }
+ },
+ "modules": [
+  {
+   "type": "title",
+   "keyType": "none",
+   "format": "{#90}╭─ {#35}{user-name}{#90}@{#34}{host-name}"
+  },
+  {
+   "type": "custom",
+   "format": "{#90}├─ {#35}system {#90}──────────────────────"
+  },
+  {
+   "type": "command",
+   "key": "│   wsl      ",
+   "text": "[ -n \"$WSL_DISTRO_NAME\" ] && echo \"WSL2 · $WSL_DISTRO_NAME\""
+  },
+  {
+   "type": "os",
+   "key": "│   os       ",
+   "format": "{2} {8}"
+  },
+  {
+   "type": "command",
+   "key": "│   omarchy  ",
+   "text": "command -v omarchy-version >/dev/null && echo \"$(omarchy-version) $(omarchy-version-channel)\""
+  },
+  {
+   "type": "host",
+   "key": "│   host     "
+  },
+  {
+   "type": "kernel",
+   "key": "│   kernel   "
+  },
+  {
+   "type": "packages",
+   "key": "│  󰏖 pkgs     "
+  },
+  {
+   "type": "wm",
+   "key": "│   wm       "
+  },
+  {
+   "type": "command",
+   "key": "│  󰉼 theme    ",
+   "text": "command -v omarchy-theme-current >/dev/null && echo -e \"$(omarchy-theme-current) \\e[37m●\\e[36m●\\e[35m●\\e[34m●\\e[33m●\\e[32m●\\e[31m●\""
+  },
+  {
+   "type": "custom",
+   "format": "{#90}├─ {#35}session {#90}─────────────────────"
+  },
+  {
+   "type": "shell",
+   "key": "│   shell    ",
+   "format": "{6} {4}"
+  },
+  {
+   "type": "terminal",
+   "key": "│   term     "
+  },
+  {
+   "type": "terminalfont",
+   "key": "│   font     "
+  },
+  {
+   "type": "editor",
+   "key": "│   editor   ",
+   "format": "{2} {5}"
+  },
+  {
+   "type": "uptime",
+   "key": "│  󱫐 uptime   ",
+   "format": "{8}d {2}h {3}m"
+  },
+  {
+   "type": "custom",
+   "format": "{#90}├─ {#35}hardware {#90}────────────────────"
+  },
+  {
+   "type": "cpu",
+   "key": "│   cpu      ",
+   "format": "{1} ({4})"
+  },
+  {
+   "type": "gpu",
+   "key": "│   gpu      ",
+   "format": "{2}"
+  },
+  {
+   "type": "display",
+   "key": "│  󱄄 display  "
+  },
+  {
+   "type": "memory",
+   "key": "│   memory   ",
+   "percent": {
+    "type": 3,
+    "green": 50,
+    "yellow": 75
+   },
+   "format": "{percentage-bar} {3}  {2}"
+  },
+  {
+   "type": "swap",
+   "key": "│  󰓡 swap     ",
+   "percent": {
+    "type": 3,
+    "green": 50,
+    "yellow": 75
+   }
+  },
+  {
+   "type": "disk",
+   "key": "│  󰋊 disk     ",
+   "folders": "/",
+   "percent": {
+    "type": 3,
+    "green": 50,
+    "yellow": 75
+   },
+   "format": "{size-percentage-bar} {3}  {2}"
+  },
+  {
+   "type": "battery",
+   "key": "│  󰁹 power    ",
+   "percent": {
+    "type": [
+     "bar",
+     "num",
+     "bar-monochrome"
+    ]
+   },
+   "format": "{capacity-bar} {4}  {5}"
+  },
+  {
+   "type": "colors",
+   "key": "╰─",
+   "keyType": "string",
+   "symbol": "circle",
+   "paddingLeft": 0
+  }
+ ]
+}

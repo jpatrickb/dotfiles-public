@@ -1,0 +1,55 @@
+[include]
+	# All identity fields (name, email) live here, untracked -- create this
+	# file per-machine rather than editing this shared config. Nothing
+	# identity-related is hardcoded in this shared file on purpose.
+	path = ~/.gitconfig.local
+[core]
+	autocrlf = input
+{{- /* delta is optional: a missing pager makes every git log/diff fail */ -}}
+{{- if lookPath "delta" }}
+	pager = delta
+{{- end }}
+[interactive]
+{{- if lookPath "delta" }}
+	diffFilter = delta --color-only
+{{- end }}
+[delta]
+	navigate = true          # use n / N to move between diff sections
+	line-numbers = true
+	# bat's built-in "ansi" theme: syntax colours come from the terminal's own palette, so delta follows the
+	# terminal theme. The hand-built Rose Pine / Dawn feature sets (and the DELTA_FEATURES light/dark switch
+	# that .zshrc used to export) are gone. Diff backgrounds are delta's own defaults, which adapt to a
+	# light or dark terminal by themselves.
+	syntax-theme = ansi
+[merge]
+	conflictstyle = {{ if semverCompare ">=2.35.0" (output "git" "--version" | regexFind "[0-9]+\\.[0-9]+\\.[0-9]+") }}zdiff3{{ else }}diff3{{ end }}
+[diff]
+	colorMoved = default
+	algorithm = histogram       # clearer diffs on moved/edited lines
+# Defaults adopted from Omarchy's ~/.config/git/config so every machine behaves the same.
+[alias]
+	co = checkout
+	br = branch
+	ci = commit
+	st = status
+[push]
+	autoSetupRemote = true      # first push of a branch sets its upstream automatically
+[commit]
+	verbose = true              # show the diff in the commit message editor
+[column]
+	ui = auto                   # list branches/tags in columns when possible
+[branch]
+	sort = -committerdate       # most recently committed branches first
+[tag]
+	sort = -version:refname     # sort version tags the way people expect
+[rerere]
+	enabled = true              # remember how conflicts were resolved and reuse it
+	autoupdate = true
+# Set explicitly (not just left unset) because Omarchy's own git config sets pull.rebase = true and
+# init.defaultBranch = master, and this file is read after it. With these lines every machine agrees:
+# pull only fast-forwards (diverged branches make you choose merge or rebase yourself), new repos use main.
+[pull]
+	rebase = false
+	ff = only
+[init]
+	defaultBranch = main

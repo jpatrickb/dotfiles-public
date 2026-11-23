@@ -1,0 +1,6 @@
+# Read by every zsh, before ~/.zshrc.
+# Ubuntu's /etc/zsh/zshrc runs a plain `compinit` (no -u) before ~/.zshrc is read. On a machine where a completion
+# directory is owned by another user or is group-writable (shared Linuxbrew, umask 002) that prints the "insecure
+# directories" prompt on every new shell. ~/.zshrc runs its own `compinit -u`, so skip the global one. This has to be
+# set here, not in ~/.zshrc: the global file runs first.
+skip_global_compinit=1

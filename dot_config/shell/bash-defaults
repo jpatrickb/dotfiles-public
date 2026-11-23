@@ -1,0 +1,44 @@
+# Bash defaults for Arch machines WITHOUT Omarchy (plain Arch, Arch on WSL). Sourced by the managed block in
+# ~/.bashrc (see modify_dot_bashrc). On Omarchy this file is not used: Omarchy's own rc already does all of
+# this (/usr/share/omarchy/default/bash/{shell,init,inputrc}). It is a small, portable subset of those files:
+# history, completion, readline settings and the tool init (mise, starship, zoxide, fzf key bindings).
+# The Omarchy-only parts (OMARCHY_PATH, omarchy-* completions, drive tools) are deliberately not carried.
+# Interactive shells only.
+
+case $- in *i*) ;; *) return 0 2>/dev/null || exit 0 ;; esac
+
+# ── History ─────────────────────────────────────────────────────────────────────────────────────────────
+shopt -s histappend
+HISTCONTROL=ignoreboth
+HISTSIZE=32768
+HISTFILESIZE="${HISTSIZE}"
+
+# ── Completion ──────────────────────────────────────────────────────────────────────────────────────────
+if [[ ! -v BASH_COMPLETION_VERSINFO && -f /usr/share/bash-completion/bash_completion ]]; then
+  source /usr/share/bash-completion/bash_completion
+fi
+
+# Command hashing off: mise (and anything else that changes PATH on the fly) needs it.
+set +h
+
+# ── Readline: Tab cycling, history search on the arrow keys, ... ────────────────────────────────────────
+[ -r "$HOME/.config/shell/inputrc" ] && bind -f "$HOME/.config/shell/inputrc"
+
+# ── Tool init ───────────────────────────────────────────────────────────────────────────────────────────
+if command -v mise >/dev/null 2>&1; then
+  eval "$(mise activate bash)"
+fi
+
+if [[ ${TERM:-} != "dumb" ]] && command -v starship >/dev/null 2>&1; then
+  eval "$(starship init bash --print-full-init)"
+fi
+
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init bash)"
+fi
+
+# Only the key bindings (Ctrl-R, Ctrl-T, Alt-C): fzf's completion.bash rewraps ~76 commands' completions on
+# every shell start, adding ~25 ms before the prompt (Omarchy makes the same trade).
+if command -v fzf >/dev/null 2>&1 && [[ -f /usr/share/fzf/key-bindings.bash ]]; then
+  source /usr/share/fzf/key-bindings.bash
+fi

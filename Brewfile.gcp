@@ -1,0 +1,2 @@
+# Optional: Google Cloud CLI. brew bundle --file="$(chezmoi source-path)/Brewfile.gcp"
+cask "gcloud-cli"

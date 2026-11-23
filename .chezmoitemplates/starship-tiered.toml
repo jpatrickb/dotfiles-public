@@ -1,0 +1,122 @@
+{{- /* The tiered pill prompt, for every machine. The argument is the palette name from the generated
+       starship-palettes.toml: dot_config/starship.toml.tmpl uses "omarchy" (the theme's own appearance); on the Mac
+       starship-dark.toml.tmpl and starship-light.toml.tmpl use "omarchy-dark" / "omarchy-light" (.zshrc picks one by
+       macOS appearance). */ -}}
+"$schema" = 'https://starship.rs/config-schema.json'
+
+# Single line, no blank line inserted above the prompt (keeps your no-extra-spacing preference).
+add_newline = false
+
+# Prompt layout: OS / directory / git / language versions / duration as connected
+# rounded "pill" segments, each tier quieter than the last (shape from the Tokyo Night preset,
+# https://starship.rs/presets/tokyo-night; the colours come from the Omarchy theme, see below).
+# Every inner segment shares one text color (pill_text), not a "previous segment" chain, which is what made
+# the python version number unreadable before.
+format = """
+$os\
+[](fg:pill_os_bg bg:pill_dir_bg)\
+$directory\
+[](fg:pill_dir_bg bg:pill_git_bg)\
+$git_branch\
+$git_status\
+[](fg:pill_git_bg bg:pill_lang_bg)\
+$nodejs\
+$rust\
+$golang\
+$python\
+$conda\
+[](fg:pill_lang_bg bg:pill_dur_bg)\
+$cmd_duration\
+[](fg:pill_dur_bg)\
+\n$character"""
+
+palette = "{{ . }}"
+
+# ── Colours ────────────────────────────────────────────────────────────────
+# The palettes are GENERATED from Omarchy's current theme (starship-palettes.toml, written by the theme-switch hook /
+# scripts/sync-omarchy-theme.py): `omarchy` is the theme's own appearance, `omarchy-dark` and `omarchy-light` are the two
+# the Mac picks between by macOS appearance. Roles: love = errors and git changes, foam = prompt character, iris = vi
+# command mode, pill_* = the tiered segments (OS, directory, git, language, duration; pill_text is the shared text
+# colour, pill_change the git-changes marker).
+{{ includeTemplate "starship-palettes.toml" . }}
+# ── OS icon: which machine you're on at a glance ───
+# Starship picks the icon from /etc/os-release. Omarchy (ID=omarchy) is unknown to it and is reported as plain "Linux";
+# Omarchy is Arch-based, so the Linux fallback is the Arch logo, not the penguin. (Omarchy's own logo, U+E900, cannot be
+# used: JetBrainsMono Nerd Font draws a different glyph at that code point.)
+[os]
+style = "bg:pill_os_bg fg:pill_os_fg"
+format = "[ $symbol ]($style)"
+disabled = false
+
+[os.symbols]
+Windows = "󰍲"
+Ubuntu = "󰕈"
+Macos = "󰀵"
+Raspbian = "󰐿"
+Mint = "󰣭"
+Linux = "󰣇"
+Gentoo = "󰣨"
+Fedora = "󰣛"
+Arch = "󰣇"
+Artix = "󰣇"
+Debian = "󰣚"
+Redhat = "󱄛"
+RedHatEnterprise = "󱄛"
+
+# ── Modules ─────────────────────────────────────────────────────────────────
+[directory]
+style = "fg:pill_dir_fg bg:pill_dir_bg"
+format = "[ $path ]($style)"
+truncation_length = 3
+truncate_to_repo = true
+truncation_symbol = "…/"
+read_only = " 󰌾"
+read_only_style = "love"
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+
+[character]
+success_symbol = "[❯](bold foam)"
+error_symbol = "[❯](bold love)"
+vimcmd_symbol = "[❮](bold iris)"
+
+[git_branch]
+symbol = " "
+style = "bg:pill_git_bg"
+format = '[[ $symbol $branch ](fg:pill_text bg:pill_git_bg)]($style)'
+
+[git_status]
+style = "bg:pill_git_bg"
+format = '[[($all_status$ahead_behind )](fg:pill_change bg:pill_git_bg)]($style)'
+
+[nodejs]
+symbol = " "
+style = "bg:pill_lang_bg"
+format = '[[ $symbol ($version) ](fg:pill_text bg:pill_lang_bg)]($style)'
+
+[rust]
+symbol = " "
+style = "bg:pill_lang_bg"
+format = '[[ $symbol ($version) ](fg:pill_text bg:pill_lang_bg)]($style)'
+
+[golang]
+symbol = " "
+style = "bg:pill_lang_bg"
+format = '[[ $symbol ($version) ](fg:pill_text bg:pill_lang_bg)]($style)'
+
+[python]
+symbol = " "
+style = "bg:pill_lang_bg"
+format = '[[ $symbol ($version) ](fg:pill_text bg:pill_lang_bg)]($style)'
+
+[conda]
+symbol = " "
+style = "bg:pill_lang_bg"
+format = '[[ $symbol $environment ](fg:pill_text bg:pill_lang_bg)]($style)'
+ignore_base = true          # do not clutter the prompt with conda's default "base" env
+
+[cmd_duration]
+min_time = 2000             # only show when a command took longer than 2s
+style = "bg:pill_dur_bg"
+format = '[[  $duration ](fg:pill_text bg:pill_dur_bg)]($style)'

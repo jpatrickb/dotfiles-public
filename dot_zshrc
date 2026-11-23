@@ -1,0 +1,132 @@
+# ============================================================================
+#  Zsh configuration (Ubuntu and the Mac). The Arch family -- Omarchy, plain
+#  Arch, Arch on WSL -- uses bash instead; see modify_dot_bashrc.
+#
+#  What every machine shares lives in ~/.config/shell/ and is sourced by both
+#  shells: common.sh (PATH, environment, aliases) and functions.sh (helpers).
+#  Only zsh-specific setup stays here. Colors are NOT set in this file any more:
+#  prompt, fzf, bat, delta and friends follow the terminal's own palette, so the
+#  terminal theme (Omarchy's theme engine, synced by chezmoi) decides how
+#  everything looks.
+# ============================================================================
+
+# ── Shared PATH, environment, aliases and functions (also used by bash) ─────
+[ -r "$HOME/.config/shell/common.sh" ] && . "$HOME/.config/shell/common.sh"
+[ -r "$HOME/.config/shell/functions.sh" ] && . "$HOME/.config/shell/functions.sh"
+
+# ── zsh-only alias ──────────────────────────────────────────────────────────
+# Global alias: pipe any command's output straight into a Neovim scratch buffer.
+alias -g NV='| nvim -'
+
+autoload -Uz add-zsh-hook
+
+# ── Prompt: Starship (configured in ~/.config/starship.toml) ────────────────
+# Mac only: a light and a dark copy of the tiered prompt (~/.config/starship-{dark,light}.toml, rendered by chezmoi).
+# Before each prompt, follow the macOS appearance, which Otty's own light/dark theme also follows. Defined BEFORE
+# starship's init so this hook runs first. Over SSH the local appearance says nothing, so the dark file is used.
+if [[ $OSTYPE == darwin* && -r $HOME/.config/starship-dark.toml ]]; then
+  _starship_pick_config() {
+    if [[ -z $SSH_CONNECTION && $(defaults read -g AppleInterfaceStyle 2>/dev/null) != Dark ]]; then
+      export STARSHIP_CONFIG="$HOME/.config/starship-light.toml"
+    else
+      export STARSHIP_CONFIG="$HOME/.config/starship-dark.toml"
+    fi
+  }
+  add-zsh-hook precmd _starship_pick_config
+fi
+command -v starship >/dev/null 2>&1 && eval "$(starship init zsh)"
+
+# ── OSC 133 semantic prompt marks ───────────────────────────────────────────
+# Invisible markers telling the terminal where each prompt and command output
+# begin and end. Harmless when nothing consumes them.
+_osc133_precmd()  { print -Pn '\e]133;D\e\\'; print -Pn '\e]133;A\e\\' }
+_osc133_preexec() { print -Pn '\e]133;C\e\\' }
+add-zsh-hook precmd  _osc133_precmd
+add-zsh-hook preexec _osc133_preexec
+
+# ── Tool initializations ────────────────────────────────────────────────────
+autoload -Uz compinit && compinit -u   # -u: shared Linuxbrew dirs are owned by another user
+
+# Each guarded: a machine that does not have the tool yet just skips the line.
+command -v zoxide >/dev/null 2>&1 && eval "$(zoxide init zsh)"   # provides `z` and `zi`
+command -v direnv >/dev/null 2>&1 && eval "$(direnv hook zsh)"
+
+# fzf: shell integration (Ctrl-T files, Alt-C cd). The fd-based commands and the
+# layout options are exported by common.sh.
+command -v fzf >/dev/null 2>&1 && source <(fzf --zsh)
+
+# atuin: full-text shell history search (rebinds Ctrl-R after fzf above).
+command -v atuin >/dev/null 2>&1 && eval "$(atuin init zsh)"
+
+# terraform shell completion, if terraform is installed (path found dynamically
+# rather than hardcoded, so this works regardless of how/where it was installed).
+if command -v terraform >/dev/null 2>&1; then
+  autoload -U +X bashcompinit && bashcompinit
+  complete -o nospace -C "$(command -v terraform)" terraform
+fi
+
+# job-tracker: tab completion for `track` (bin/track on PATH), via argcomplete.
+# Only on machines that actually have it installed -- not transferred/expected
+# everywhere.
+command -v track >/dev/null 2>&1 && eval "$(register-python-argcomplete track)"
+
+zstyle ':completion:*' menu select
+
+[ -f "$HOME/.atuin/bin/env" ] && . "$HOME/.atuin/bin/env"
+
+# Linuxbrew, if installed (this Mac uses /opt/homebrew instead, see brew shellenv
+# in .zprofile -- both are guarded so the same .zshrc works on either).
+[ -x /home/linuxbrew/.linuxbrew/bin/brew ] && eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
+
+command -v mise >/dev/null 2>&1 && eval "$(mise activate zsh)"
+
+# Re-run compinit after extending fpath, so completions dropped in ~/.zfunc
+# (e.g. argcomplete-generated ones) actually get picked up.
+[ -d ~/.zfunc ] && fpath+=~/.zfunc; autoload -Uz compinit; compinit -u
+
+# ── Zsh interactive plugins (keep syntax highlighting LAST) ─────────────────
+# [custom] Genuinely last in the file, not just last in this section -- a
+# second compinit or anything else that touches zle widgets AFTER this loads
+# can silently break the highlighter. (Broke exactly this way once already:
+# an earlier edit moved several things, including the compinit rerun above,
+# below this block instead of above it.)
+#
+# Checks every known install location in turn (Homebrew on Apple
+# Silicon/Intel Mac, Linuxbrew, or a manually-cloned ~/.zsh/plugins) and
+# sources the first that exists -- portable across every machine without
+# needing an OS check.
+ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE='fg=8'   # ANSI bright black: muted ghost text in any terminal theme
+for _p in \
+  /opt/homebrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+  /usr/local/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+  /home/linuxbrew/.linuxbrew/share/zsh-autosuggestions/zsh-autosuggestions.zsh \
+  "$HOME/.zsh/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh"
+do
+  [ -f "$_p" ] && { source "$_p"; break }
+done
+for _p in \
+  /opt/homebrew/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh \
+  /usr/local/opt/zsh-fast-syntax-highlighting/share/zsh-fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh \
+  "$HOME/.zsh/plugins/fast-syntax-highlighting/F-Sy-H.plugin.zsh" \
+  "$HOME/.zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh"
+do
+  [ -f "$_p" ] && { source "$_p"; break }
+done
+unset _p
+
+
+# fastfetch banner: full layout locally, one line over SSH, nothing inside tmux or herdr panes.
+# (Shared with bash; see ~/.config/shell/banner.sh. Kept after the plugins so they are loaded first.)
+[ -r "$HOME/.config/shell/banner.sh" ] && . "$HOME/.config/shell/banner.sh"
+
+# Kilo Code: put npm's global bin dir on PATH (guarded so machines without npm
+# don't error; note this runs node once per shell start).
+command -v npm >/dev/null 2>&1 && export PATH="$(npm config get prefix)/bin:$PATH"
+
+# >>> otty shell integration >>>
+# Added by Otty — toggle in Settings > Shell > Shell Integration.
+# Inert unless launched by Otty (it sets $OTTY_SHELL_INTEGRATION).
+if [ -n "$ZSH_VERSION" ] && [ -n "$OTTY_SHELL_INTEGRATION" ] && [ -r "$OTTY_SHELL_INTEGRATION/otty-integration.zsh" ]; then
+  . "$OTTY_SHELL_INTEGRATION/otty-integration.zsh"
+fi
+# <<< otty shell integration <<<

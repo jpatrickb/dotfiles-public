@@ -1,0 +1,19 @@
+{{- /* Asked once on the first `chezmoi init`; re-ask any time with `chezmoi init --prompt`. */ -}}
+{{- $aws := promptBoolOnce . "awsCli" "Install the AWS CLI" false -}}
+{{- $gcp := promptBoolOnce . "gcpCli" "Install the GCP CLI" false -}}
+{{- /*
+  Machine class, auto-detected (no prompt). See .chezmoitemplates/machine-class for the rules.
+    family: mac | arch | debian | other     env: omarchy | wsl | native
+  These land in the generated config, so after pulling a change to this file chezmoi tells you to
+  re-run `chezmoi init`; templates and .chezmoiignore can then branch on .family and .env.
+*/ -}}
+{{- $rel := dict -}}
+{{- if hasKey .chezmoi "osRelease" -}}{{- $rel = .chezmoi.osRelease -}}{{- end -}}
+{{- $kernel := "" -}}
+{{- if and (eq .chezmoi.os "linux") (hasKey .chezmoi "kernel") -}}{{- $kernel = get .chezmoi.kernel "osrelease" | default "" -}}{{- end -}}
+{{- $class := includeTemplate "machine-class" (dict "os" .chezmoi.os "id" (get $rel "id" | default "") "idLike" (get $rel "idLike" | default "") "kernel" $kernel "omarchy" (stat "/usr/share/omarchy" | not | not)) | trim | splitList " " -}}
+[data]
+  awsCli = {{ $aws }}
+  gcpCli = {{ $gcp }}
+  family = {{ index $class 0 | quote }}
+  env = {{ index $class 1 | quote }}
